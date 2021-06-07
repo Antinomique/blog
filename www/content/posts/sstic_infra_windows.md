@@ -98,21 +98,22 @@ All these information are configurable with parameters given to the command line
 
 During the SSTIC competition, the limitations were quite severe: 2 minutes, 100 MB of RAM, and 2 parallel processes.
 
-There is still one problem that was not addressed, a DoS by writing a lot of data to the disk.
+There is still one problem that is not addressed, a DoS by writing a huge amount of data on the disk.
 This was somewhat mitigated by the fact that the only one folder that was writable for each player was removed 10 minutes after its creation.
 
 
 
 ## Feature needed
 
-Due to context of the challenge, players need to be able to write to the disk.
-This folder needs to be private for each player, as the files created are used to exploit the binary.
-As with the modification of AppJailLauncher, each process is now spawned with a different AppContainerProfile. That is enough to create a folder and add the RW rights for the SID of the AppContainerProfile.
+Due to the context of the challenge, players need to be able to write to the disk.
+This folder needs to be private for each player as the files created are used to exploit the binary.
+With the modification of AppJailLauncher, each process is now spawned with a different AppContainerProfile. This is enough to create a folder for each profile and add the RW rights for the SID of the AppContainerProfile.
 
 These private folders were available for 10 minutes before being automatically removed.
-In order to be able to reuse this folder during its lifetime, the AppJailLauncher project has been modified and gives to the user a UID when it creates the private folder.
-For the following connections, the user can give its UID and it will be used to associate the previously created folder to the player.
-In order to avoid players bruteforcing this UID, it was hashed together with the IP address of the player, and a secret string to generate the folder name.
+In order to be able to reuse this folder during its lifetime, the AppJailLauncher project has been modified and gives to the player a UID when it creates the private folder. This UID is needed in order to retrieve the AppContainerProfile previously created and retrieve the folder name associated with this profile.
+For the following connections, the player can give its UID and it will be used to associate the previously created folder to the player.
+In order to avoid malicious players bruteforcing this UID, it was hashed together with the IP address of the player, and a secret string to generate the folder name.
+
 
 
 ## Access to the Desktop file 
@@ -144,14 +145,14 @@ Command line to execute AppJailLauncher:
  C:\Tools\appjaillauncher-rs.exe run --foldermazes "C:\users\challenge\\mazes" "C:\Tools\SSTIC.exe"
 ```
 
-"C:\Tools\SSTIC.exe" argument is the binary that will be executed when a player connects to the port where AppjailLauncher listens.
+"C:\Tools\SSTIC.exe" argument is the binary that will be executed when a player connects to the port on which AppjailLauncher listens.
 
 `Foldermazes` parameter is the folder that will contain the private folders.
 This folder needs to exist before running AppJailLauncher.
 
-More parameters can be defined, such as the port where the program listens, the job limitations (time, memory, number of processes), etc.
+More parameters can be defined, such as the port on which the program listens, the job limitations (time, memory, number of processes), etc.
 
-During the competition, this command was launched with Powershell.
+Remark: During the competition, this command was launched with Powershell.
 
 
 
@@ -164,27 +165,27 @@ There are listed below, but not explained, we may investigate it in the future, 
 
 On Windows OS, it is known that well-known DLLs (e.g., ntdll) are mapped at the same address for all the processes of the system.
 This value is modified at each reboot of the system.
-Nevertheless, the mapping of executed PE, like the binary challenge is known to be different at each execution.
+Nevertheless, the mapping of an executed PE, like the binary challenge is known to be different at each execution.
 During the development phase of the binary challenge, it appears that executed binaries are always mapped at the same address during a boot life.
 This value changes when the system is rebooted.
 
 
 ## cmd Vs Powershell
 
-Most of players obtaining a remote code execution have launched a process with the WinExec call.
-Some of them have used Powershell and some of them have used cmd.
-It turns out that people using cmd.exe were not able to list directories and access the file from the Desktop.
-Though, people spawning powershell were able to reach the file on the Desktop and read it.
-Moreover, people who have spawned a cmd.exe then a powershell from it were able to access the file from the Desktop.
+Most of players obtaining an RCE have launched a process with a call to `WinExec`.
+Using this call, some of them have executed `Powershell` and some of them have executed `cmd`.
+It turns out that people using `cmd` were not able to list directories and access the file from the Desktop.
+Though, people spawning `Powershell` were able to reach the file on the Desktop and read it.
+Moreover, people who have spawned a `cmd` terminal then launched a `Powershell` inside, were able to access the file from the Desktop.
 
 
 ## DOS Powershell
 
-It appears that some players found a kind of Denial Of Service by executing some commands with their Remote Code Execution. Indeed, it seems they where able to make the AppJailLauncher process crash from their jail. It happened two times.
+It appears that some players found a kind of Denial Of Service by executing some commands with their RCE. Indeed, it seems they where able to make the AppJailLauncher process crash from their jail. It happened two times.
 
 ## Powershell arguments
 
-When players executed powershell commands asking arguments from their RCE, the arguments were asked in the powershell terminal from which the AppJailLauncher were launched.
+When players executed powershell commands asking arguments from their RCE, the arguments were asked in the `Powershell` terminal from which the AppJailLauncher were launched.
 
 
 # Conclusion 
@@ -197,6 +198,7 @@ At least 29 participants exploited the binary and got a remote shell.
 None of them have defeated the infrastructure, or maybe we did not see it or maybe nobody tried to defeat it.
 The AppJailLauncher has crashed only 3 times, and was restarted with a single command line.
 As seen in the *problems* section of this post, there are still weird behaviors that can be related to the AppJailLauncher project.
+They need further investigations to determine their origin.
 
 
 Many thanks to the TrailOfBits team for their AppJailLauncher project.
@@ -210,6 +212,5 @@ As the time was constrained for the deployment of the infrastructure some things
 * It seems that some implementations of netcat are not compatible with the UID feature.
 The program will still answer that it needs 64 chars exactly even if the player inputs 64 chars.
 The problem is certainly due to the mishandling of the end of line character.
-
 * Add some usage statistics (total number of connections, number of crashes, number of live connections, etc.)
 
